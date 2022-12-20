@@ -9,6 +9,7 @@ import pandas as pd
 import json
 import joblib
 import random
+import ipdb
 
 def byLineReader(filename):
     with open(filename, "r", encoding="utf-8") as f:
@@ -48,10 +49,35 @@ class UMLS(object):
             self.type = "txt"
     
     def generate_name_list_set(self, semantic_type, source_onto):
+        # here i added something to parse the UMLS
         name_reader = byLineReader(os.path.join(self.umls_path, "MRCONSO." + self.type))
         semantic_reader = byLineReader(os.path.join(self.umls_path, "MRSTY." + self.type))
+        rel_reader = byLineReader(os.path.join(self.umls_path, "MRREL." + self.type))
         self.cui2pref = dict()
         self.cui_in_onto = set()
+        # dictionary for cui to triple 
+        self.cui2triple = dict()
+        total, has = list(), list()
+        rui2label = dict()
+        for line in tqdm(rel_reader, ascii=True):
+            if self.type == "txt":
+                l = [t.replace("\"", "") for t in line.split(",")]
+            else:
+                l = line.strip().split("|")
+            if len(l[7])>0:
+                cui = l[0]
+                rel = l[7]
+                object = l[4]
+                
+                if cui not in self.cui2triple:
+                    self.cui2triple[cui] = []
+                else:
+                    if (rel, object) not in self.cui2triple[cui]:
+                        self.cui2triple[cui].append((rel, object))
+        print(len(self.cui2triple)) 
+        # here I just use debugger to display some statistics ...
+#        stat = stat(self.cui2triple)
+        ipdb.set_trace()               
         for line in tqdm(name_reader, ascii=True):
             if self.type == "txt":
                 l = [t.replace("\"", "") for t in line.split(",")]
@@ -139,9 +165,9 @@ class UMLS(object):
 
         print('number of description:', des_count)
 
-
-tfidf_vectorizer = ''
-vectorizer = joblib.load(tfidf_vectorizer)
+# where is the pre-saved vectorizer???
+#tfidf_vectorizer = ''
+#vectorizer = joblib.load(tfidf_vectorizer)
 
 def generate_pair(y, mentions, select_scheme):
     if select_scheme == 'random':
@@ -210,7 +236,18 @@ def prepare_final_pretraindata(cui2defs, cui2syns, special_tokens = None, select
             # input()
     random.shuffle(output)
     return output
-                
+
+def stat(cuidic: dict):
+    """
+    cuidic: a dictionary which projects cui to triples it connected to in the form of set (rel_mention, tail ent CUI)
+    """
+    for i in cuidic.keys():
+        cuidic[i].append(len(cuidic[i]))
+    return cuidic
+    
+    
+    
+
 
 if __name__ ==  '__main__':
 
@@ -218,7 +255,7 @@ if __name__ ==  '__main__':
 
     semantic_type = set(['T005','T007','T017','T022','T031','T033','T037','T038','T058','T062','T074',
                     'T082','T091','T092','T097','T098','T103','T168','T170','T201','T204'])
-    semantic_type_ontology = pd.read_csv('/STY.csv') # TUI->STRING mapping table
+    semantic_type_ontology = pd.read_csv('STY.csv') # TUI->STRING mapping table
     semantic_type_size = 0
     while len(semantic_type)!=semantic_type_size:
         semantic_type_size = len(semantic_type)
@@ -227,7 +264,7 @@ if __name__ ==  '__main__':
                 semantic_type.update([semantic_type_ontology['Class ID'][i][-4:]])
     source_onto = ['CPT','FMA','GO','HGNC','HPO','ICD10','ICD10CM','ICD9CM','MDR','MSH','MTH',
                     'NCBI','NCI','NDDF','NDFRT','OMIM','RXNORM','SNOMEDCT_US']
-    UMLS = UMLS('/yourUMLS2017aaPATH', only_load_dict = True)
+    UMLS = UMLS('/export/home/yan/infhome/el/', only_load_dict = True)
 
     UMLS.generate_name_list_set(semantic_type, source_onto)
     UMLS.generate_syn_des()
