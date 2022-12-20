@@ -1,13 +1,35 @@
 import json
 from argparse import ArgumentParser
+from collections import defaultdict
 from pathlib import Path
 import numpy as np
+from tqdm import tqdm
 
-default_umls_filepath = Path()
+
+def byLineReader(filename):
+    with open(filename, "r", encoding="utf-8") as f:
+        line = f.readline()
+        while line:
+        # for _ in range(100000):
+            yield line
+            line = f.readline()
+    return
 
 
-def prepare_degree_index(umls_filepath: Path):
-    degree_index = {}
+def prepare_degree_index(umls_rel_filename: Path):
+    rel_reader = byLineReader(umls_rel_filename)
+
+    cui2triple = defaultdict(list)
+    for line in tqdm(rel_reader, ascii=True, total=24633828):
+        l = line.strip().split("|")
+        if len(l[7]) > 0:
+            cui = l[0]
+            rel = l[7]
+            object = l[4]
+
+            if (rel, object) not in cui2triple[cui]:
+                cui2triple[cui].append((rel, object))
+    degree_index = {key: len(value) for key, value in cui2triple.items()}
     return degree_index
 
 
@@ -32,9 +54,7 @@ def calculate_stats_from_degrees_list(degrees_list: list) -> dict:
     return stats
 
 
-def calculate_stats(list_of_entities: list, umls_filepath: Path = default_umls_filepath):
-    degree_index = prepare_degree_index(umls_filepath)
-
+def calculate_stats(list_of_entities: list, degree_index: dict):
     num_entities_not_found = 0
     encountered_degrees_unique = []
     encountered_degrees = []
@@ -53,11 +73,17 @@ def calculate_stats(list_of_entities: list, umls_filepath: Path = default_umls_f
     print(json.dumps(calculate_stats_from_degrees_list(encountered_degrees_unique), indent=4))
 
 
+def main(filename: Path, umls_rel_filename: Path):
+    degree_index = prepare_degree_index(umls_rel_filename)
+    calculate_stats(json.load(filename.open()), degree_index)
+
 if __name__ == "__main__":
     argparser = ArgumentParser()
     argparser.add_argument("filename", type=Path)
+    argparser.add_argument("--umls_rel_filename", type=Path, default="./MRREL.RRF")
     args = argparser.parse_args()
 
-    calculate_stats(json.load(args.filename))
+    main(args.filename, args.umls_rel_filename)
+
 
 
