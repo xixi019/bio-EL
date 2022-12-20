@@ -12,19 +12,20 @@ def prepare_degree_index(umls_filepath: Path):
 
 
 def calculate_stats_from_degrees_list(degrees_list: list) -> dict:
-    degrees_list = np.array(degrees_list)
+    degrees_list_array = np.array(degrees_list)
 
-    maximum = degrees_list.max(initial=None)
-    minimum = degrees_list.min(initial=None)
-    mean = degrees_list.mean()
-    median = np.median(degrees_list)
+    maximum = degrees_list_array.max(initial=None)
+    minimum = degrees_list_array.min(initial=None)
+    mean = degrees_list_array.mean()
+    median = np.median(degrees_list_array)
     percentiles = list(range(0,101, 10))
-    percentile_values = np.percentile(degrees_list, percentiles)
+    percentile_values = np.percentile(degrees_list_array, percentiles)
     stats = {
         "maximum": float(maximum),
         "minimum": float(minimum),
         "mean": float(mean),
-        "median": float(median)
+        "median": float(median),
+        "counter": len(degrees_list)
     }
     for percentile, percentile_value in zip(percentiles, percentile_values):
         stats[f"{percentile}"] = float(percentile_value)
