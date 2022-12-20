@@ -71,6 +71,7 @@ def calculate_stats(list_of_entities: list, degree_index: dict):
     print(json.dumps(calculate_stats_from_degrees_list(encountered_degrees), indent=4))
     print("All entities")
     print(json.dumps(calculate_stats_from_degrees_list(encountered_degrees_unique), indent=4))
+    print(f"Entities not found: {num_entities_not_found}")
 
 
 def main(filename: Path, umls_rel_filename: Path):
