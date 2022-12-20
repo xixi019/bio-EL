@@ -19,7 +19,7 @@ def byLineReader(filename):
 def prepare_degree_index(umls_rel_filename: Path):
     rel_reader = byLineReader(umls_rel_filename)
 
-    cui2triple = defaultdict(list)
+    cui2triple = defaultdict(set)
     for line in tqdm(rel_reader, ascii=True, total=24633828):
         l = line.strip().split("|")
         if len(l[7]) > 0:
@@ -27,8 +27,7 @@ def prepare_degree_index(umls_rel_filename: Path):
             rel = l[7]
             object = l[4]
 
-            if (rel, object) not in cui2triple[cui]:
-                cui2triple[cui].append((rel, object))
+            cui2triple[cui].add((rel, object))
     degree_index = {key: len(value) for key, value in cui2triple.items()}
     return degree_index
 
@@ -67,6 +66,7 @@ def calculate_stats(list_of_entities: list, degree_index: dict):
         else:
             encountered_degrees_unique.append(degree_index[entity_identifier])
 
+    assert len(encountered_degrees) > 0
     print("All mentions")
     print(json.dumps(calculate_stats_from_degrees_list(encountered_degrees), indent=4))
     print("All entities")
@@ -76,7 +76,7 @@ def calculate_stats(list_of_entities: list, degree_index: dict):
 
 def main(filename: Path, umls_rel_filename: Path):
     degree_index = prepare_degree_index(umls_rel_filename)
-    calculate_stats(json.load(filename.open()), degree_index)
+    calculate_stats(json.load(filename.open())["id"], degree_index)
 
 if __name__ == "__main__":
     argparser = ArgumentParser()
