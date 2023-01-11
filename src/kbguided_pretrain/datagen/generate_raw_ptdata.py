@@ -160,11 +160,11 @@ def prepare_final_pretraindata(cui2syns, cui2triples, special_tokens = None, sel
         triples = cui2triples[cui]
         synText = create_line(cui, triples, cui2syns, special_tokens)
         tks = tokenizer(synText)['input_ids']
-        if len(tks) > 650:
+        if len(tks) > 600:
             synText = tokenizer.decode(tks[:650])
            # else:
            #     synText = tokenizer.decode(tks[-700:])
-        if len(synText) != 'START END':
+        if len(synText) >= len('START END'):
             output.append([cui, mention, mention, synText])
     random.shuffle(output)
     return output
@@ -194,6 +194,7 @@ if __name__ ==  '__main__':
     output = prepare_final_pretraindata(UMLS.cuis_in_semtc, UMLS.cui2triple, special_tokens = ["START", "END"])
     shuffle(output)
     f = None
+    ipdb.set_trace()
     if not os.path.exists('./raw_data/'):
         os.makedirs('./raw_data/')
     for i in tqdm(range(len(output))):
