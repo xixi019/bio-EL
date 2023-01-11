@@ -31,14 +31,12 @@ class TokenInstance:
     """ This TokenInstance is a obect to have the basic units of data that should be
         extracted from the raw text file and can be consumed by any BERT like model.
     """
-    def __init__(self, tokens_x, tokens_y, prefixlen, lang="en"):
+    def __init__(self, tokens_x, lang="en"):
         self.tokens_x = tokens_x
-        self.tokens_y = tokens_y
-        self.prefixlen = prefixlen
         self.lang = lang
 
     def get_values(self):
-        return (self.tokens_x, self.tokens_y, self.prefixlen)
+        return (self.tokens_x)
 
     def get_lang(self):
         return self.lang
@@ -100,10 +98,12 @@ class BioBARTPretrainDataCreator(PretrainingDataCreator):
         with open(path, 'r', encoding='utf-8') as fd:
             for i, line in enumerate(tqdm(fd)):
                 line = json.loads(line.strip('\n'))
-                x = tokenizer.tokenize(line[3])
-                y = [tokenizer.tokenize(' '+line[1]+' is'), tokenizer.tokenize(' '+line[2])]
-                cui = line[0]
-                documents.append([x, y, cui])
+                # description
+                x = tokenizer.tokenize(line[0])
+                # synonym "mention is synonym."
+#                y = [tokenizer.tokenize(' '+line[1]+' is'), tokenizer.tokenize(' '+line[2])]
+                documents.append([x])
+#                documents.append([x, y, cui])
 
         documents = [x for x in documents if x]
 
@@ -125,11 +125,15 @@ class BioBARTPretrainDataCreator(PretrainingDataCreator):
         max_num_tokens = self.max_seq_length - 2
 
         document = copy.deepcopy(self.documents[index])
+        # description
         x = truncate_input_sequence(document[0], max_num_tokens)
-        y = document[1]
-        cui = document[2]
+        # sysnoym
+#        y = document[1]
+        # cui
+#        cui = document[2]
 
-        instance.append(TokenInstance(x, y, len(y[0])))
+        # "dummy" and 8 for dummy test.
+        instance.append(TokenInstance(x))
 
         return instance
     
@@ -156,6 +160,7 @@ def process_data(begin, end):
         )
         instance_lists.append(d_c.instances)
     d_c.merge_documents(instance_lists)
+    os.mkdir('./tokenized_data/')
     d_c.save('./tokenized_data/genrated_'+str(begin//10).rjust(3,'0')+'.pkl')
 
 

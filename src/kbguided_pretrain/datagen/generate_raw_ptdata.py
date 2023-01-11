@@ -121,7 +121,7 @@ class UMLS(object):
 # create the synthetic text based on cui and triple it connects to
 rels = ["has_entry_version", "mapped_to", "has_sort_version", "entry_version_of", "permuted_term_of", "sort_version_of"]
 def create_line(cui, triples, cui2syns, special_tokens):
-    synText = [special_tokens[0]]
+    synText = []
     if len(triples)<=100:
         for pair in triples:
             if cui in cui2syns and pair[1] in cui2syns and pair[0] not in rels:
@@ -131,7 +131,7 @@ def create_line(cui, triples, cui2syns, special_tokens):
             else:
                 pass
 
-        synText.append(special_tokens[1])                
+#        synText.append(special_tokens[1])                
         synText = " ".join(synText)
     else:
         for pair in triples:
@@ -143,7 +143,7 @@ def create_line(cui, triples, cui2syns, special_tokens):
                 else:
                     pass
 
-        synText.append(special_tokens[1])                
+#        synText.append(special_tokens[1])                
         synText = " ".join(synText)
     return synText
 
@@ -164,8 +164,7 @@ def prepare_final_pretraindata(cui2syns, cui2triples, special_tokens = None, sel
             synText = tokenizer.decode(tks[:650])
            # else:
            #     synText = tokenizer.decode(tks[-700:])
-        if len(synText) >= len('START END'):
-            output.append([cui, mention, mention, synText])
+        output.append([synText])
     random.shuffle(output)
     return output
 
@@ -194,7 +193,6 @@ if __name__ ==  '__main__':
     output = prepare_final_pretraindata(UMLS.cuis_in_semtc, UMLS.cui2triple, special_tokens = ["START", "END"])
     shuffle(output)
     f = None
-    ipdb.set_trace()
     if not os.path.exists('./raw_data/'):
         os.makedirs('./raw_data/')
     for i in tqdm(range(len(output))):
