@@ -224,7 +224,7 @@ def trip2txt(mention, triples, cui2syns):
         synText = " ".join(synText)
     return synText
 
-def prepare_final_pretraindata(cui2defs, cui2syns, cui2triple, special_tokens = None, select_scheme = 'random'):
+def prepare_final_pretraindata(cui2defs, cui2syns, cui2triple, special_tokens = None, select_scheme = 'random', OnlySyn = True):
     from transformers import BartTokenizer
     tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
     output = []
@@ -255,26 +255,25 @@ def prepare_final_pretraindata(cui2defs, cui2syns, cui2triple, special_tokens = 
                 idx = random.randint(0, 3)
                 des = create_line(idx<2, mention, ' '.join(cui2defs[cui][:2]), special_tokens, template_sets[idx])
                 tks = tokenizer(des)['input_ids']
-                if len(tks) > 700:
+                if len(tks) > 512:
                     if idx < 2:
-                        des = tokenizer.decode(tks[:700])
+                        des = tokenizer.decode(tks[:512])
                     else:
-                        des = tokenizer.decode(tks[-700:])
+                        des = tokenizer.decode(tks[-512:])
 
             output.append([cui, mention, syn, des, None])
-
+            if OnlySyn:
+                continue
         # syntext is the linearilized triples
-        if len(triples) >= 1:
-            synText = trip2txt(mention, triples, cui2syns)
-            tks = tokenizer(synText)['input_ids']
-            if len(tks) > 600:
-                synText = tokenizer.decode(tks[:650])
-            else:
-                synText = tokenizer.decode(tks[-6500:])
-                # more than <s></s>
-            output.append([cui, mention, syn, des, synText])
-
-    ipdb.set_trace()
+            if len(triples) >= 1:
+                print('this line is executed which shoudl not ha[[en!')
+                input()
+                synText = trip2txt(mention, triples, cui2syns)
+                tks = tokenizer(synText)['input_ids']
+                if len(tks) > 512:
+                    synText = tokenizer.decode(tks[:512])
+                    # more than <s></s>
+                output.append([cui, mention, syn, des, synText])
 
     random.shuffle(output)
     return output
@@ -295,7 +294,7 @@ if __name__ ==  '__main__':
                 semantic_type.update([semantic_type_ontology['Class ID'][i][-4:]])
     source_onto = ['CPT','FMA','GO','HGNC','HPO','ICD10','ICD10CM','ICD9CM','MDR','MSH','MTH',
                     'NCBI','NCI','NDDF','NDFRT','OMIM','RXNORM','SNOMEDCT_US']
-    UMLS = UMLS('/export/home/yan/infhome/el/', only_load_dict = True)
+    UMLS = UMLS('/export/home/yan/el/', only_load_dict = True)
 
     UMLS.generate_name_list_set(semantic_type, source_onto)
     UMLS.generate_syn_des()
@@ -308,7 +307,7 @@ if __name__ ==  '__main__':
             count += 1
     print(count)
 
-    output = prepare_final_pretraindata(UMLS.cui2description, UMLS.cui2pref, UMLS.cui2triple, special_tokens = ["START", "END"], select_scheme = 'random')
+    output = prepare_final_pretraindata(UMLS.cui2description, UMLS.cui2pref, UMLS.cui2triple, special_tokens = ["START", "END"], select_scheme = 'random', OnlySyn = False)
     shuffle(output)
     f = None
     if not os.path.exists('./raw_data/'):

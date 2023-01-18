@@ -67,12 +67,18 @@ def get_random_partition(data_directory, index):
 def padding_to_maxlength(ids, max_length):
     cur_len = len(ids)
     len_diff = max_length-len(ids)
-    return ids + [1] * len_diff, [1] * cur_len + [0] * len_diff
+    if len_diff>=0:
+        return ids + [1] * len_diff, [1] * cur_len + [0] * len_diff
+    else:
+        return ids[:max_length], [1] * max_length
 
 def padding_label_to_maxlength(ids, max_length, prefixlen):
     cur_len = len(ids)
     len_diff = max_length-len(ids)
-    return [-100] * prefixlen + ids[prefixlen:] + [-100] * len_diff, [1] * cur_len + [0] * len_diff
+    if len_diff>=0:
+        return [-100] * prefixlen + ids[prefixlen:] + [-100] * len_diff, [1] * cur_len + [0] * len_diff
+    else:
+        return [-100] * prefixlen + id[prefixlen:max_length], [1] * max_length
 
 class PreTrainingDataset(Dataset):
     def __init__(self,

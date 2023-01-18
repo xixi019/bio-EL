@@ -8,6 +8,7 @@ import copy
 from multiprocessing import Process
 from transformers import BartTokenizer
 import json
+import ipdb
 
 def truncate_input_sequence(document, max_num_tokens):
     try:
@@ -108,9 +109,7 @@ class BioBARTPretrainDataCreator(PretrainingDataCreator):
                 else:
                     y = [tokenizer.tokenize(' '+line[1]+' is'), tokenizer.tokenize(' '+line[2])]
                 cui = line[0]
-                
                 documents.append([x, y, cui])
-
         documents = [x for x in documents if x]
 
         self.documents = documents
@@ -132,7 +131,7 @@ class BioBARTPretrainDataCreator(PretrainingDataCreator):
 
         document = copy.deepcopy(self.documents[index])
         x = truncate_input_sequence(document[0], max_num_tokens)
-        y = document[1]
+        y = truncate_input_sequence(document[1], max_num_tokens)
         cui = document[2]
 
         instance.append(TokenInstance(x, y, len(y[0])))
@@ -169,6 +168,7 @@ if __name__ == '__main__':
     # process_data(0,10)
     threads = []
     path = './raw_data'
+    os.mkdir("./tokenized_data")
     input_files = os.listdir(path)
     for idx in range(0, len(input_files), 10):
         if len(threads) == 100:
