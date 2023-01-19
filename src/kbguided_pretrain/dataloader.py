@@ -135,7 +135,6 @@ class PreTrainingDataset(Dataset):
         input_ids, attn_mask = padding_to_maxlength(self.tokenizer.convert_tokens_to_ids(x), self.max_seq_length)
         decoder_input_ids, decoder_attn_mask = padding_to_maxlength(self.tokenizer.convert_tokens_to_ids(y), self.max_seq_length)
         labels, _ = padding_label_to_maxlength(self.tokenizer.convert_tokens_to_ids(y[1:]+['</s>']), self.max_seq_length, prefixlen)
-
         return [map_to_torch(input_ids), map_to_torch(decoder_input_ids), map_to_torch(labels), map_to_torch(attn_mask), map_to_torch(decoder_attn_mask)]
 
 class BARTDatasetProviderInterface:

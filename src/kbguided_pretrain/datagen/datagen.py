@@ -105,7 +105,7 @@ class BioBARTPretrainDataCreator(PretrainingDataCreator):
                 x = tokenizer.tokenize(line[3])
                 # y is synonym information to the decoder
                 if line[4]:
-                    y = [tokenizer.tokenize(line[4])]
+                    y = [tokenizer.tokenize(' '+line[1]), tokenizer.tokenize(line[4])]
                 else:
                     y = [tokenizer.tokenize(' '+line[1]+' is'), tokenizer.tokenize(' '+line[2])]
                 cui = line[0]
