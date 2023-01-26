@@ -78,7 +78,7 @@ def padding_label_to_maxlength(ids, max_length, prefixlen):
     if len_diff>=0:
         return [-100] * prefixlen + ids[prefixlen:] + [-100] * len_diff, [1] * cur_len + [0] * len_diff
     else:
-        return [-100] * prefixlen + id[prefixlen:max_length], [1] * max_length
+        return [-100] * prefixlen + ids[prefixlen:max_length], [1] * max_length
 
 class PreTrainingDataset(Dataset):
     def __init__(self,
@@ -126,10 +126,9 @@ class PreTrainingDataset(Dataset):
 
         y.append('</s>')
         y = y + sum(token_y,[])
-        y = y[:300]
 
         x.append('<s>')
-        x = x + token_x[:700]
+        x = x + token_x
         x.append('</s>')
     
         input_ids, attn_mask = padding_to_maxlength(self.tokenizer.convert_tokens_to_ids(x), self.max_seq_length)
