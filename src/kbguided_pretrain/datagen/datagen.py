@@ -8,8 +8,9 @@ import copy
 from multiprocessing import Process
 from transformers import BartTokenizer
 import json
-import ipdb
 
+
+# not working
 def truncate_input_sequence(document, max_num_tokens):
     try:
         total_length = len(sum(document, []))
@@ -19,13 +20,13 @@ def truncate_input_sequence(document, max_num_tokens):
         return document
     else:
         tokens_to_trunc = total_length - max_num_tokens
-        while tokens_to_trunc > 0:
-            if len(document[-1]) >= tokens_to_trunc:
-                document[-1] = document[-1][:len(document[-1])-tokens_to_trunc]
-                tokens_to_trunc = 0
-            else:
-                tokens_to_trunc -= len(document[-1])
-                document = document[:-1]
+        if tokens_to_trunc > 0:
+            document[-1] = document[-1][:-tokens_to_trunc]
+        
+#            if not len(sum(document, [])) <= 512:
+#                print(document)
+#                print(len(document[0]), len(document[1]))
+#                print(total_length, tokens_to_trunc)
         return document
 
 class TokenInstance:
@@ -108,7 +109,12 @@ class BioBARTPretrainDataCreator(PretrainingDataCreator):
                     y = [tokenizer.tokenize(' '+line[1]), tokenizer.tokenize(line[4])]
                 else:
                     y = [tokenizer.tokenize(' '+line[1]+' is'), tokenizer.tokenize(' '+line[2])]
+
+                # if the length of synonym is 300, the model would be asked to predict  nothing since we limit the input size to 300 due to OOM issues.
+                if len(y[0]) >= 300:
+                    continue
                 cui = line[0]
+#                if len(sum(y, [])) >= 512:
                 documents.append([x, y, cui])
         documents = [x for x in documents if x]
 
@@ -132,7 +138,6 @@ class BioBARTPretrainDataCreator(PretrainingDataCreator):
         document = copy.deepcopy(self.documents[index])
         x = truncate_input_sequence(document[0], max_num_tokens)
         y = truncate_input_sequence(document[1], max_num_tokens)
-        cui = document[2]
 
         instance.append(TokenInstance(x, y, len(y[0])))
 
@@ -145,16 +150,15 @@ class BioBARTPretrainDataCreator(PretrainingDataCreator):
 
 def process_data(begin, end):
     print('Start Processs:',begin,'->',end)
-    path = './raw_data'
+    path = './raw_data_tri'
     input_files = os.listdir(path)
     tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
     instance_lists = []
-    document_lists = []
     for i in range(begin, min(end,len(input_files))):
         d_c = BioBARTPretrainDataCreator(
             path = os.path.join(path, input_files[i]),
             tokenizer = tokenizer,
-            max_seq_length = 1024,
+            max_seq_length = 302,
             readin = 2000000,
             dupe_factor = 1,
             sentence_permute_prob = 1,
@@ -167,8 +171,10 @@ def process_data(begin, end):
 if __name__ == '__main__':
     # process_data(0,10)
     threads = []
-    path = './raw_data'
-    os.mkdir("./tokenized_data")
+    path = './raw_data_tri'
+    save_path = "./tokenized_data"
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
     input_files = os.listdir(path)
     for idx in range(0, len(input_files), 10):
         if len(threads) == 100:

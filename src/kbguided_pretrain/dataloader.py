@@ -67,18 +67,12 @@ def get_random_partition(data_directory, index):
 def padding_to_maxlength(ids, max_length):
     cur_len = len(ids)
     len_diff = max_length-len(ids)
-    if len_diff>=0:
-        return ids + [1] * len_diff, [1] * cur_len + [0] * len_diff
-    else:
-        return ids[:max_length], [1] * max_length
+    return ids + [1] * len_diff, [1] * cur_len + [0] * len_diff
 
 def padding_label_to_maxlength(ids, max_length, prefixlen):
     cur_len = len(ids)
     len_diff = max_length-len(ids)
-    if len_diff>=0:
-        return [-100] * prefixlen + ids[prefixlen:] + [-100] * len_diff, [1] * cur_len + [0] * len_diff
-    else:
-        return [-100] * prefixlen + ids[prefixlen:max_length], [1] * max_length
+    return [-100] * prefixlen + ids[prefixlen:] + [-100] * len_diff, [1] * cur_len + [0] * len_diff
 
 class PreTrainingDataset(Dataset):
     def __init__(self,
@@ -126,14 +120,18 @@ class PreTrainingDataset(Dataset):
 
         y.append('</s>')
         y = y + sum(token_y,[])
+#        y = y[:300]
 
         x.append('<s>')
+#        x = x + token_x[:700]
         x = x + token_x
+
         x.append('</s>')
     
         input_ids, attn_mask = padding_to_maxlength(self.tokenizer.convert_tokens_to_ids(x), self.max_seq_length)
         decoder_input_ids, decoder_attn_mask = padding_to_maxlength(self.tokenizer.convert_tokens_to_ids(y), self.max_seq_length)
         labels, _ = padding_label_to_maxlength(self.tokenizer.convert_tokens_to_ids(y[1:]+['</s>']), self.max_seq_length, prefixlen)
+
         return [map_to_torch(input_ids), map_to_torch(decoder_input_ids), map_to_torch(labels), map_to_torch(attn_mask), map_to_torch(decoder_attn_mask)]
 
 class BARTDatasetProviderInterface:
