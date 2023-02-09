@@ -1,7 +1,7 @@
-# BioGenEL
-This repository is for our **NAACL 2022** work: 
+# TIBET
+This repository is for our **bio-el 2023** work: 
 
-[*Generative Biomedical Entity Linking via Knowledge Base-Guided Pre-training and Synonyms-Aware Fine-tuning*](https://arxiv.org/abs/2204.05164)
+[*TIBET*](https://www.overleaf.com/project/63bd57c868d185867901c69d)
 
 
 # Citation
@@ -18,4 +18,4 @@ If interested, please cite:
 }
 ```
 
-Some of our code are modified from facebook's GENRE work.
+Some of our code are modified from THU's bio-el work.
