@@ -1,4 +1,4 @@
-deepspeed --include localhost:0,1,2,3,4,5 \
+deepspeed --include localhost:0,1 \
           ./train.py --config-file ./bart.json \
                      --output_dir ./synonyms_pretrained_model \
                      --token_nosing_prob 0.1 \

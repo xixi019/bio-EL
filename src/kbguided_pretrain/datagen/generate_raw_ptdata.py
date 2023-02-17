@@ -9,6 +9,7 @@ import pandas as pd
 import json
 import joblib
 import random
+from collections import defaultdict
 import ipdb
 
 def byLineReader(filename):
@@ -49,16 +50,17 @@ class UMLS(object):
             self.type = "txt"
     
     def generate_name_list_set(self, semantic_type, source_onto):
-        # here i added something to parse the UMLS
         name_reader = byLineReader(os.path.join(self.umls_path, "MRCONSO." + self.type))
         semantic_reader = byLineReader(os.path.join(self.umls_path, "MRSTY." + self.type))
         rel_reader = byLineReader(os.path.join(self.umls_path, "MRREL." + self.type))
-        self.cui2pref = dict()
+
+        '''
+        self.cui2triple is a dictionary which projects CUI of head entity to relation (label) and tail entity CUIs.
+        '''
         self.cui_in_onto = set()
-        # dictionary for cui to triple 
-        self.cui2triple = dict()
-        total, has = list(), list()
-        rui2label = dict()
+        self.cui2triple = defaultdict(set)
+        self.cui2pref = dict()
+
         for line in tqdm(rel_reader, ascii=True):
             if self.type == "txt":
                 l = [t.replace("\"", "") for t in line.split(",")]
@@ -68,16 +70,17 @@ class UMLS(object):
                 cui = l[0]
                 rel = l[7]
                 object = l[4]
-                
-                if cui not in self.cui2triple:
-                    self.cui2triple[cui] = []
-                else:
-                    if (rel, object) not in self.cui2triple[cui]:
-                        self.cui2triple[cui].append((rel, object))
-        print(len(self.cui2triple)) 
-        # here I just use debugger to display some statistics ...
-#        stat = stat(self.cui2triple)
-        ipdb.set_trace()               
+                self.cui2triple[cui].add((rel, object))
+        # number of triples in total in the pre-training datax
+        print("the length of cui in the umls dump is", len(self.cui2triple)) 
+
+
+        '''
+        self.cui_in_onto is a set which includes only CUI which are in the target ontology
+        self.cui2pref: a dictionary, cui ---> list() of sysnonyms 
+         '''
+        self.cui2pref = dict()
+        self.cui_in_onto = set()
         for line in tqdm(name_reader, ascii=True):
             if self.type == "txt":
                 l = [t.replace("\"", "") for t in line.split(",")]
@@ -165,10 +168,6 @@ class UMLS(object):
 
         print('number of description:', des_count)
 
-# where is the pre-saved vectorizer???
-#tfidf_vectorizer = ''
-#vectorizer = joblib.load(tfidf_vectorizer)
-
 def generate_pair(y, mentions, select_scheme):
     if select_scheme == 'random':
         return random.choice(mentions)
@@ -195,11 +194,40 @@ def create_line(prefix, mention, context, special_tokens, template_choice):
         des = ' '.join([context, template_choice, special_tokens[0], mention, special_tokens[1]])
     return des
 
-def prepare_final_pretraindata(cui2defs, cui2syns, special_tokens = None, select_scheme = 'random'):
+
+# create the synthetic text based on cui and triple it connects to
+rels = ["has_entry_version", "has_sort_version", "entry_version_of", "permuted_term_of", "sort_version_of"]
+def trip2txt(mention, triples, cui2syns):
+    '''
+    triples: triple this entity is connected to
+    '''
+    synText = []
+    if len(triples)<=100:
+        for pair in triples:
+            if pair[1] in cui2syns and pair[0] not in rels:
+                synText.extend(pair[0].split('_'))
+                synText.append(random.choice(cui2syns[pair[1]]) + '.')
+            else:
+                pass
+        synText = " ".join(synText)
+    else:
+        for pair in triples:
+            if random.randint(0, len(triples)) <= 99:
+                if pair[1] in cui2syns and pair[0] not in rels:
+                    synText.extend(pair[0].split('_'))
+                    synText.append(random.choice(cui2syns[pair[1]]) + ".")
+                else:
+                    pass
+
+        synText = " ".join(synText)
+    return synText
+
+def prepare_final_pretraindata(cui2defs, cui2syns, cui2triple, special_tokens = None, select_scheme = 'random', OnlySyn = False):
     from transformers import BartTokenizer
     tokenizer = BartTokenizer.from_pretrained('facebook/bart-large')
     output = []
     for cui in tqdm(cui2syns):
+        triples = cui2triple[cui]
         for syn in cui2syns[cui]:
             if cui not in cui2defs:
                 if len(cui2syns[cui]) > 1:
@@ -225,29 +253,27 @@ def prepare_final_pretraindata(cui2defs, cui2syns, special_tokens = None, select
                 idx = random.randint(0, 3)
                 des = create_line(idx<2, mention, ' '.join(cui2defs[cui][:2]), special_tokens, template_sets[idx])
                 tks = tokenizer(des)['input_ids']
-                if len(tks) > 700:
+                if len(tks) > 512:
                     if idx < 2:
-                        des = tokenizer.decode(tks[:700])
+                        des = tokenizer.decode(tks[:512])
                     else:
-                        des = tokenizer.decode(tks[-700:])
+                        des = tokenizer.decode(tks[-512:])
 
-            output.append([cui, mention, syn, des])
-            # print(output[-1])
-            # input()
+            output.append([cui, mention, syn, des, None])
+            if OnlySyn:
+                continue
+        # syntext is the linearilized triples
+            if len(triples) >= 1:
+                synText = trip2txt(mention, triples, cui2syns)
+                tks = tokenizer(synText)['input_ids']
+                if len(tks) > 512:
+                    synText = tokenizer.decode(tks[:512])
+                    # more than <s></s>
+                output.append([cui, mention, syn, des, synText])
+
     random.shuffle(output)
     return output
-
-def stat(cuidic: dict):
-    """
-    cuidic: a dictionary which projects cui to triples it connected to in the form of set (rel_mention, tail ent CUI)
-    """
-    for i in cuidic.keys():
-        cuidic[i].append(len(cuidic[i]))
-    return cuidic
-    
-    
-    
-
+                
 
 if __name__ ==  '__main__':
 
@@ -264,7 +290,7 @@ if __name__ ==  '__main__':
                 semantic_type.update([semantic_type_ontology['Class ID'][i][-4:]])
     source_onto = ['CPT','FMA','GO','HGNC','HPO','ICD10','ICD10CM','ICD9CM','MDR','MSH','MTH',
                     'NCBI','NCI','NDDF','NDFRT','OMIM','RXNORM','SNOMEDCT_US']
-    UMLS = UMLS('/export/home/yan/infhome/el/', only_load_dict = True)
+    UMLS = UMLS('/export/home/moeller/bio-el/', only_load_dict = True)
 
     UMLS.generate_name_list_set(semantic_type, source_onto)
     UMLS.generate_syn_des()
@@ -276,22 +302,15 @@ if __name__ ==  '__main__':
         if len(UMLS.cui2pref[cui]) >=2:
             count += 1
     print(count)
-    input()
 
-    output = prepare_final_pretraindata(UMLS.cui2description, UMLS.cui2pref, special_tokens = ["START", "END"], select_scheme = 'random')
+    output = prepare_final_pretraindata(UMLS.cui2description, UMLS.cui2pref, UMLS.cui2triple, special_tokens = ["START", "END"], select_scheme = 'random', OnlySyn = False)
     shuffle(output)
     f = None
+    if not os.path.exists('./raw_data/'):
+        os.makedirs('./raw_data/')
     for i in tqdm(range(len(output))):
         if i%100000 == 0:
             if f:
                 f.close()
             f = open('./raw_data/data_'+str(i//100000).rjust(3,'0')+'.txt', 'w')
         f.write(json.dumps(output[i])+'\n')
-
-
-
-
-
-
-
-
