@@ -48,7 +48,67 @@ class UMLS(object):
             self.type = "RRF"
         else:
             self.type = "txt"
-    
+
+    def generate_mappings(self):
+        mesh_mapping = {}
+        medic_mapping = {}
+        snomed_mapping = {}
+        all_sources = set()
+        name_reader = byLineReader(os.path.join(self.umls_path, "MRCONSO." + self.type))
+        for line in tqdm(name_reader, ascii=True):
+            if self.type == "txt":
+                l = [t.replace("\"", "") for t in line.split(",")]
+            else:
+                l = line.strip().split("|")
+            cui = l[0]
+            lang = l[1]
+            source = l[11]
+            string = l[14]
+            source_id = l[13]
+            if source == "MSH":
+                mesh_mapping[source_id] = cui
+            if source == "SNM":
+                snomed_mapping[source_id] = cui
+            if source == "MEDCIN":
+                medic_mapping[source_id] = cui
+            all_sources.add(source)
+
+        name_reader = byLineReader(os.path.join(self.umls_path, "MRMAP." + self.type))
+        for line in tqdm(name_reader, ascii=True):
+            if self.type == "txt":
+                l = [t.replace("\"", "") for t in line.split(",")]
+            else:
+                l = line.strip().split("|")
+            cui = l[0]
+            source = l[1]
+            source_id = l[4]
+            if source == "MSH":
+                mesh_mapping[source_id] = cui
+            if source == "SNM":
+                snomed_mapping[source_id] = cui
+            if source == "MEDCIN":
+                medic_mapping[source_id] = cui
+            all_sources.add(source)
+
+        name_reader = byLineReader(os.path.join(self.umls_path, "MRSAT." + self.type))
+        for line in tqdm(name_reader, ascii=True):
+            if self.type == "txt":
+                l = [t.replace("\"", "") for t in line.split(",")]
+            else:
+                l = line.strip().split("|")
+            cui = l[0]
+            source = l[9]
+            source_id = l[5]
+            if source == "MSH":
+                mesh_mapping[source_id] = cui
+            if source == "SNM":
+                snomed_mapping[source_id] = cui
+            if source == "MEDCIN":
+                medic_mapping[source_id] = cui
+            all_sources.add(source)
+
+        return medic_mapping, snomed_mapping, mesh_mapping, all_sources
+
     def generate_name_list_set(self, semantic_type, source_onto):
         name_reader = byLineReader(os.path.join(self.umls_path, "MRCONSO." + self.type))
         semantic_reader = byLineReader(os.path.join(self.umls_path, "MRSTY." + self.type))
