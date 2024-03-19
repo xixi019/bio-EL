@@ -1,20 +1,19 @@
 # TIBET
-This repository is for our **bio-el 2023** work: 
+This repository is for our **Biomedical Entity Linking with Triple-aware Pre-Training** work: 
 
-[*TIBET*](https://www.overleaf.com/project/63bd57c868d185867901c69d)
+[*arxiv*]([https://www.overleaf.com/project/63bd57c868d185867901c69d](https://arxiv.org/pdf/2308.14429.pdf))
 
 
 # Citation
 If interested, please cite:
 ```bibtex
-@misc{
-  BioGenEL,
-  doi = {10.48550/ARXIV.2204.05164},
-  url = {https://arxiv.org/abs/2204.05164},
-  author = {Yuan, Hongyi and Yuan, Zheng and Yu, Sheng},
-  title = {Generative Biomedical Entity Linking via Knowledge Base-Guided Pre-training and Synonyms-Aware Fine-tuning},
-  publisher = {arXiv},
-  year = {2022}
+@misc{yan2023biomedical,
+      title={Biomedical Entity Linking with Triple-aware Pre-Training}, 
+      author={Xi Yan and Cedric Möller and Ricardo Usbeck},
+      year={2023},
+      eprint={2308.14429},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL}
 }
 ```
 
