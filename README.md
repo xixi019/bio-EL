@@ -1,7 +1,8 @@
 # TIBET
 This repository is for our **Biomedical Entity Linking with Triple-aware Pre-Training** work: 
 
-[*arxiv*]([https://www.overleaf.com/project/63bd57c868d185867901c69d](https://arxiv.org/pdf/2308.14429.pdf))
+[*arxiv*]([https://arxiv.org/abs/2308.14429))
+
 
 
 # Citation
