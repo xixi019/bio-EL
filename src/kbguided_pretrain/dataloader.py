@@ -120,10 +120,12 @@ class PreTrainingDataset(Dataset):
 
         y.append('</s>')
         y = y + sum(token_y,[])
-        y = y[:300]
+#        y = y[:300]
 
         x.append('<s>')
-        x = x + token_x[:700]
+#        x = x + token_x[:700]
+        x = x + token_x
+
         x.append('</s>')
     
         input_ids, attn_mask = padding_to_maxlength(self.tokenizer.convert_tokens_to_ids(x), self.max_seq_length)
