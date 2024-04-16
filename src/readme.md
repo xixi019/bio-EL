@@ -39,19 +39,10 @@ For training data as example, you should preapare two files *train.source* and *
 In the .source file, each line is a json dumped list and contains one element which is your input text with mentions markedl
 In the .target file, each line is also a josn dumped list and contains two element where the first one is *the mention is* prefix and the second is the target entity.
 
-Here is an example, for the same line is both files:
-
-.source: ['Ocular manifestations of START juvenile rheumatoid arthritis END.']
-
-.target: ['juvenile rheumatoid arthritis is ', ' juvenile rheumatoid arthritis']
-
-For the construction of trie, if using prefix prompt tokens, please set the root of the trie as *16*, which is the token id of * is*; if not set the root as *2*, which is the decoder bos token of BART.
-
-P.S. For evaluations with prefix tokens trick, the per_device_eval_batch_size must be 1. As there will be error for multiple samples in a batch using fairseq generator.
 
 # pretraining
 
-The pretraining code is provided in ./kb_guided_pretrain/ and is written with deepspeed using ZeRO2.
+The pretraining code is provided in ./kb_guided_pretrain/ 
 
 # Resources
 
