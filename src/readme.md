@@ -44,8 +44,3 @@ In the .target file, each line is also a josn dumped list and contains two eleme
 
 The pretraining code is provided in ./kb_guided_pretrain/ 
 
-# Resources
-
-The knowledge base pretrained checkpoint can be downloaded from this [link](https://drive.google.com/file/d/1TqvQRau1WPYE9hKfemKZr-9ptE-7USAH/view?usp=sharing),
-
-The preprocessed datasets can be downloaded from this [link](https://drive.google.com/file/d/1JWYMdwxp7_ZZRGAO-ENmgUNirx9-nX32/view?usp=sharing).
