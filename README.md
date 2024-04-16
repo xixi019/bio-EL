@@ -1,4 +1,4 @@
-# TIBET
+# Biomedical Entity Linking with Triple-aware Pre-Training
 This repository is for our **Biomedical Entity Linking with Triple-aware Pre-Training** work: 
 
 [*arxiv*](https://arxiv.org/abs/2308.14429)
